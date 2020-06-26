@@ -6,3 +6,17 @@
 .DS_Store
 ._*
 /FeinCMS.egg-info
+/MANIFEST
+/_build
+/build
+/dist
+tests/test.zip
+/docs/_build
+/tests/.tox
+/tests/.coverage
+/tests/htmlcov
+venv
+.tox
+.coverage
+htmlcov
+test.zip

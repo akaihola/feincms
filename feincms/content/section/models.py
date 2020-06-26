@@ -1,82 +1,111 @@
-from django import forms
+from __future__ import absolute_import, unicode_literals
+
 from django.conf import settings as django_settings
-from django.contrib.admin.widgets import AdminRadioSelect
-from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
+from django.contrib import admin
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
-from django.template.loader import render_to_string
-from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from feincms import settings
-from feincms.admin.editor import ItemEditorForm
+from feincms._internal import ct_render_to_string
+from feincms.admin.item_editor import FeinCMSInline
+from feincms.contrib.richtext import RichTextField
+from feincms.module.medialibrary.fields import MediaFileForeignKey
 from feincms.module.medialibrary.models import MediaFile
 
-from feincms.content.medialibrary.models import MediaFileWidget
+
+class SectionContentInline(FeinCMSInline):
+    raw_id_fields = ("mediafile",)
+    radio_fields = {"type": admin.VERTICAL}
+
 
 class SectionContent(models.Model):
-    feincms_item_editor_context_processors = ( lambda x: dict(TINYMCE_JS_URL = settings.TINYMCE_JS_URL), )
-    feincms_item_editor_includes = {
-        'head': [
-            'admin/content/richtext/init.html',
-            'admin/content/mediafile/init.html',
-            ],
-        }
+    """
+    Title, media file and rich text fields in one content block.
+    """
 
-    title = models.CharField(_('title'), max_length=200, blank=True)
-    richtext = models.TextField(_('text'), blank=True)
+    feincms_item_editor_inline = SectionContentInline
+    feincms_item_editor_context_processors = (
+        lambda x: settings.FEINCMS_RICHTEXT_INIT_CONTEXT,
+    )
+    feincms_item_editor_includes = {"head": [settings.FEINCMS_RICHTEXT_INIT_TEMPLATE]}
+
+    title = models.CharField(_("title"), max_length=200, blank=True)
+    richtext = RichTextField(_("text"), blank=True)
+    mediafile = MediaFileForeignKey(
+        MediaFile,
+        on_delete=models.CASCADE,
+        verbose_name=_("media file"),
+        related_name="+",
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         abstract = True
-        verbose_name = _('section')
-        verbose_name_plural = _('sections')
+        verbose_name = _("section")
+        verbose_name_plural = _("sections")
 
     @classmethod
-    def initialize_type(cls, TYPE_CHOICES=None, cleanse=False):
-        if 'feincms.module.medialibrary' not in django_settings.INSTALLED_APPS:
-            raise ImproperlyConfigured, 'You have to add \'feincms.module.medialibrary\' to your INSTALLED_APPS before creating a %s' % cls.__name__
+    def initialize_type(cls, TYPE_CHOICES=None, cleanse=None):
+        if "feincms.module.medialibrary" not in django_settings.INSTALLED_APPS:
+            raise ImproperlyConfigured(
+                "You have to add 'feincms.module.medialibrary' to your"
+                " INSTALLED_APPS before creating a %s" % cls.__name__
+            )
 
         if TYPE_CHOICES is None:
-            raise ImproperlyConfigured, 'You need to set TYPE_CHOICES when creating a %s' % cls.__name__
+            raise ImproperlyConfigured(
+                "You need to set TYPE_CHOICES when creating a" " %s" % cls.__name__
+            )
 
-        cls.add_to_class('mediafile', models.ForeignKey(MediaFile, verbose_name=_('media file'),
-            related_name='%s_%s_set' % (cls._meta.app_label, cls._meta.module_name),
-            blank=True, null=True,
-            ))
+        cls.add_to_class(
+            "type",
+            models.CharField(
+                _("type"),
+                max_length=10,
+                choices=TYPE_CHOICES,
+                default=TYPE_CHOICES[0][0],
+            ),
+        )
 
-        cls.add_to_class('type', models.CharField(_('type'),
-            max_length=10, choices=TYPE_CHOICES,
-            default=TYPE_CHOICES[0][0]))
-
-        class MediaFileContentAdminForm(ItemEditorForm):
-            mediafile = forms.ModelChoiceField(queryset=MediaFile.objects.all(),
-                widget=MediaFileWidget, required=False)
-            type = forms.ChoiceField(choices=TYPE_CHOICES,
-                initial=TYPE_CHOICES[0][0], label=_('type'),
-                widget=AdminRadioSelect(attrs={'class': 'radiolist'}))
-
-        cls.feincms_item_editor_form = MediaFileContentAdminForm
-        cls.cleanse = cleanse
+        if cleanse:
+            cls.cleanse = cleanse
 
     @classmethod
     def get_queryset(cls, filter_args):
         # Explicitly add nullable FK mediafile to minimize the DB query count
-        return cls.objects.select_related('parent', 'mediafile').filter(filter_args)
+        return cls.objects.select_related("parent", "mediafile").filter(filter_args)
 
     def render(self, **kwargs):
         if self.mediafile:
             mediafile_type = self.mediafile.type
         else:
-            mediafile_type = 'nomedia'
+            mediafile_type = "nomedia"
 
-        return render_to_string([
-            'content/section/%s_%s.html' % (self.type, mediafile_type),
-            'content/section/%s.html' % self.type,
-            'content/section/%s.html' % mediafile_type,
-            'content/section/default.html',
-            ], {'content': self})
+        return ct_render_to_string(
+            [
+                "content/section/%s_%s.html" % (mediafile_type, self.type),
+                "content/section/%s.html" % mediafile_type,
+                "content/section/%s.html" % self.type,
+                "content/section/default.html",
+            ],
+            {"content": self},
+            request=kwargs.get("request"),
+            context=kwargs.get("context"),
+        )
 
     def save(self, *args, **kwargs):
-        if getattr(self, 'cleanse', False):
-            from feincms.utils.html.cleanse import cleanse_html
-            self.richtext = cleanse_html(self.richtext)
+        if getattr(self, "cleanse", None):
+            try:
+                # Passes the rich text content as first argument because
+                # the passed callable has been converted into a bound method
+                self.richtext = self.cleanse(self.richtext)
+            except TypeError:
+                # Call the original callable, does not pass the rich richtext
+                # content instance along
+                self.richtext = self.cleanse.im_func(self.richtext)
+
         super(SectionContent, self).save(*args, **kwargs)
+
+    save.alters_data = True

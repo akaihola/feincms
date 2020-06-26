@@ -1,10 +1,13 @@
-from django.conf.urls.defaults import *
+# flake8: noqa
+from __future__ import absolute_import
 
-from feincms.views import base
-# from feincms.views import applicationcontent
+from django.conf.urls import url
 
-urlpatterns = patterns('',
-    url(r'^preview/(?P<page_id>\d+)/', base.preview_handler, name='feincms_preview'),
-    # url(r'^$|^(.*)/$', applicationcontent.handler),
-    url(r'^$|^(.*)/$', base.handler), # catch empty URLs (root page) or URLs ending with a slash
-)
+from feincms.views import Handler
+
+handler = Handler.as_view()
+
+urlpatterns = [
+    url(r"^$", handler, name="feincms_home"),
+    url(r"^(.*)/$", handler, name="feincms_handler"),
+]

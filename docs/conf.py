@@ -11,26 +11,24 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.append(os.path.abspath('.'))
-sys.path.append(os.path.abspath('..'))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'example.settings'
 
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc']
+extensions = []
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.txt'
+source_suffix = '.rst'
 
 # The encoding of source files.
 #source_encoding = 'utf-8'
@@ -40,7 +38,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'FeinCMS'
-copyright = u'2009, Feinheit GmbH and contributors'
+copyright = u'2009-2010, Feinheit GmbH and contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -96,31 +94,13 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'default'
+# html_theme_path = ['_theme']
+# html_theme = 'nature'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {
-    'footerbgcolor': '#213C63', # (CSS color): Background color for the footer line.
-    #'footertextcolor': '', # (CSS color): Text color for the footer line.
-    'sidebarbgcolor': '#305791', # (CSS color): Background color for the sidebar.
-    #'sidebartextcolor': '', # (CSS color): Text color for the sidebar.
-    'sidebarlinkcolor': '#98CCDB', # (CSS color): Link color for the sidebar.
-    'relbarbgcolor': '#213C63', # (CSS color): Background color for the relation bar.
-    #'relbartextcolor': '', # (CSS color): Text color for the relation bar.
-    #'relbarlinkcolor': '', # (CSS color): Link color for the relation bar.
-    #'bgcolor': '', # (CSS color): Body background color.
-    #'textcolor': '', # (CSS color): Body text color.
-    #'linkcolor': '', # (CSS color): Body link color.
-    #'headbgcolor': '', # (CSS color): Background color for headings.
-    #'headtextcolor': '', # (CSS color): Text color for headings.
-    #'headlinkcolor': '', # (CSS color): Link color for headings.
-    'codebgcolor': '#E0E8FF', # (CSS color): Background color for code blocks.
-    #'codetextcolor': '', # (CSS color): Default text color for code blocks, if not set differently by the highlighting style.
-    'bodyfont': 'Helvetica, Arial, sans-serif', # (CSS font-family): Font for normal text.
-    'headfont': 'Helvetica, Arial, sans-serif', # (CSS font-family): Font for headings.
-}
+#html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -195,9 +175,9 @@ latex_font_size = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [
-  ('index', 'FeinCMS.tex', u'FeinCMS Documentation',
-   u'Feinheit GmbH and contributors', 'manual'),
+latex_documents = [(
+    'index', 'FeinCMS.tex', u'FeinCMS Documentation',
+    u'Feinheit GmbH and contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
